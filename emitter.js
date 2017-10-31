@@ -1,17 +1,21 @@
+/* eslint-disable valid-jsdoc */
 'use strict';
 
 /**
  * Сделано задание на звездочку
  * Реализованы методы several и through
  */
-getEmitter.isStar = true;
+getEmitter.isStar = false;
 module.exports = getEmitter;
+
 
 /**
  * Возвращает новый emitter
  * @returns {Object}
  */
 function getEmitter() {
+    let subscription = [];
+
     return {
 
         /**
@@ -19,26 +23,52 @@ function getEmitter() {
          * @param {String} event
          * @param {Object} context
          * @param {Function} handler
+         * @returns {Object}
          */
-        on: function (event, context, handler) {
-            console.info(event, context, handler);
+        on: function on(event, context, handler) {
+            subscription.push(
+                {
+                    event,
+                    context,
+                    handler
+                });
+
+            return this;
         },
 
         /**
          * Отписаться от события
          * @param {String} event
          * @param {Object} context
+         * @returns {Object}
          */
         off: function (event, context) {
-            console.info(event, context);
+            event += '.';
+            subscription = subscription.filter(events =>
+                events[context] !== context ||
+                events[event] !== event && !events[event].startsWith(event));
+
+            return this;
         },
 
         /**
          * Уведомить о событии
          * @param {String} event
+         * @returns {Object}
          */
         emit: function (event) {
-            console.info(event);
+            let eventParts = event.split('.');
+            while (eventParts.length) {
+                subscription.forEach(item => {
+                    if (item[eventParts] === eventParts && (!item.filter || item.filter())) {
+                        item.handler.call(item.context);
+                    }
+                });
+                eventParts.pop();
+            }
+
+
+            return this;
         },
 
         /**
