@@ -1,4 +1,4 @@
-/* eslint-disable valid-jsdoc */
+/* eslint-disable valid-jsdoc,linebreak-style */
 'use strict';
 
 /**
@@ -8,15 +8,25 @@
 getEmitter.isStar = false;
 module.exports = getEmitter;
 
+function sep(event) {
+    let eventCount = (event.split('.').length - 1);
+    let res = [event];
+    for (let i = 0; i < eventCount; i++) {
+        event = event.substring(0, event.lastIndexOf('.'));
+        res.push(event);
+    }
+
+    return res;
+}
 
 /**
  * Возвращает новый emitter
  * @returns {Object}
  */
 function getEmitter() {
-    let subscription = [];
 
     return {
+        subscription: [],
 
         /**
          * Подписаться на событие
@@ -25,8 +35,8 @@ function getEmitter() {
          * @param {Function} handler
          * @returns {Object}
          */
-        on: function on(event, context, handler) {
-            subscription.push(
+        on: function (event, context, handler) {
+            this.subscription.push(
                 {
                     event,
                     context,
@@ -42,11 +52,17 @@ function getEmitter() {
          * @param {Object} context
          * @returns {Object}
          */
+
         off: function (event, context) {
-            event += '.';
-            subscription = subscription.filter(events =>
-                events[context] !== context ||
-                events[event] !== event && !events[event].startsWith(event));
+            this.subscription.forEach((subscription, i) => {
+                let index = subscription.event.indexOf(event);
+                let eventSlicer = subscription.event[index + event.length];
+                if (subscription.event.includes(event) &&
+                    (eventSlicer === '.' || eventSlicer === undefined) &&
+                    context === subscription.context) {
+                    delete this.subscription[i];
+                }
+            }, this);
 
             return this;
         },
@@ -56,17 +72,15 @@ function getEmitter() {
          * @param {String} event
          * @returns {Object}
          */
+
         emit: function (event) {
-            let eventParts = event.split('.');
-            while (eventParts.length) {
-                subscription.forEach(item => {
-                    if (item[eventParts] === eventParts && (!item.filter || item.filter())) {
-                        item.handler.call(item.context);
+            sep(event).forEach(newEvent => {
+                this.subscription.forEach(subscriptions => {
+                    if (subscriptions.event === newEvent) {
+                        subscriptions.handler.call(subscriptions.context);
                     }
                 });
-                eventParts.pop();
-            }
-
+            }, this);
 
             return this;
         },
