@@ -57,7 +57,7 @@ function getEmitter() {
             this.subscription.forEach((subscription, i) => {
                 let index = subscription.event.indexOf(event);
                 let eventSlicer = subscription.event[index + event.length];
-                if (subscription.event.includes(event) &&
+                if (index === 0 &&
                     (eventSlicer === '.' || eventSlicer === undefined) &&
                     context === subscription.context) {
                     delete this.subscription[i];
